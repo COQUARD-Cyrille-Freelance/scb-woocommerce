@@ -12,7 +12,7 @@
             "name": "CrochetFeve0251"
         }
     ],
-    "type": "project",
+    "type": "wordpress-plugin",
     "config": {
         "sort-packages": true,
         "preferred-install": {
@@ -39,11 +39,7 @@
         "php": "^7 || ^8",
         "brain/monkey": "^2.0",
         "coenjacobs/mozart": "^0.7",
-        "wp-launchpad/autoresolver": "^0.0.5",
-        "wp-launchpad/cli": "^1.0.1",
-        "wp-launchpad/cli-installer": "^0.0.2",
-        "wp-launchpad/core": "^0.0.8",
-        "wp-launchpad/take-off": "^1.0.1",
+        "coquardcyr/scb-payment-api": "v2.0.1",
         "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0",
         "league/container": "^3.3",
         "mnsami/composer-custom-directory-installer": "^2.0",
@@ -54,6 +50,12 @@
         "roave/security-advisories": "dev-master",
         "szepeviktor/phpstan-wordpress": "^0.7.0",
         "wp-coding-standards/wpcs": "^2",
+        "wp-launchpad/autoresolver": "^0.0.5",
+        "wp-launchpad/cli": "^1.0.2",
+        "wp-launchpad/cli-installer": "^0.0.2",
+        "wp-launchpad/core": "^0.0.8",
+        "wp-launchpad/http-client": "^0.0.1",
+        "wp-launchpad/take-off": "^1.0.1",
         "wp-media/phpunit": "^3.0"
     },
     "autoload": {
@@ -61,12 +63,12 @@
             "inc/classes"
         ],
         "psr-4": {
-            "Launchpad\\": "inc/"
+            "SCBWoocommerce\\": "inc/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Launchpad\\Tests\\": "tests/"
+            "SCBWoocommerce\\Tests\\": "tests/"
         }
     },
     "extra": {
@@ -76,14 +78,16 @@
             ]
         },
         "mozart": {
-            "dep_namespace": "Launchpad\\Dependencies\\",
+            "dep_namespace": "SCBWoocommerce\\Dependencies\\",
             "dep_directory": "/inc/Dependencies/",
             "classmap_directory": "/inc/classes/dependencies/",
-            "classmap_prefix": "Launchpad",
+            "classmap_prefix": "SCBWoocommerce",
             "packages": [
                 "league/container",
                 "wp-launchpad/core",
-                "wp-launchpad/autoresolver"
+                "wp-launchpad/autoresolver",
+                "wp-launchpad/http-client",
+                "coquardcyr/scb-payment-api"
             ]
         }
     },

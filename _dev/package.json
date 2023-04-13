@@ -1,0 +1,27 @@
+{
+  "name": "rocket-launcher-front",
+  "version": "1.0.0",
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "scripts": {
+    "dev": "bud dev",
+    "build": "bud build",
+    "bud": "bud"
+  },
+  "devDependencies": {
+    "-": "0.0.1",
+    "@roots/bud": "^6.11.0",
+    "@roots/bud-react": "^6.11.0",
+    "caniuse-lite": "^1.0.30001464"
+  }
+}

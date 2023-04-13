@@ -1,7 +1,7 @@
 <?php
 
-namespace Launchpad\Tests\Integration;
-use Launchpad\Tests\Integration\TestCase as BaseTestCase;
+namespace SCBWoocommerce\Tests\Integration;
+use SCBWoocommerce\Tests\Integration\TestCase as BaseTestCase;
 
 class AdminTestCase extends BaseTestCase
 {

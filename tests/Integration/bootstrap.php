@@ -1,5 +1,5 @@
 <?php
-namespace Launchpad\Tests\Integration;
+namespace SCBWoocommerce\Tests\Integration;
 
 define( 'ROCKET_LAUNCHER_PLUGIN_ROOT', dirname( dirname( __DIR__ ) ) . DIRECTORY_SEPARATOR );
 define( 'ROCKET_LAUNCHER_TESTS_FIXTURES_DIR', dirname( __DIR__ ) . '/Fixtures' );

@@ -1,6 +1,6 @@
 <?php
 
-namespace Launchpad\Tests\Integration;
+namespace SCBWoocommerce\Tests\Integration;
 
 trait FilterTrait {
 

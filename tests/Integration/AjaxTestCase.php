@@ -1,6 +1,6 @@
 <?php
 
-namespace Launchpad\Tests\Integration;
+namespace SCBWoocommerce\Tests\Integration;
 use ReflectionObject;
 use WPMedia\PHPUnit\Integration\AjaxTestCase as WPMediaAjaxTestCase;
 class AjaxTestCase extends WPMediaAjaxTestCase
