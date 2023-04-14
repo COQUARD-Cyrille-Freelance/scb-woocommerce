@@ -1,7 +1,10 @@
 <?php
 namespace SCBWoocommerce\Engine\Checkout;
 
+use DateTime;
+use Exception;
 use SCBWoocommerce\Dependencies\CoquardCyrilleFreelance\SCBPaymentAPI\Client;
+use SCBWoocommerce\Dependencies\CoquardCyrilleFreelance\SCBPaymentAPI\Exceptions\SCBPaymentAPIException;
 use SCBWoocommerce\Dependencies\LaunchpadCore\EventManagement\SubscriberInterface;
 class GatewaySubscriber implements SubscriberInterface {
 
@@ -16,13 +19,19 @@ class GatewaySubscriber implements SubscriberInterface {
     protected $configurations;
 
     /**
+     * @var string
+     */
+    protected $prefix;
+
+    /**
      * @param Client $client
      * @param Configurations $configurations
      */
-    public function __construct(Client $client, Configurations $configurations)
+    public function __construct(Client $client, Configurations $configurations, string $prefix)
     {
         $this->client = $client;
         $this->configurations = $configurations;
+        $this->prefix = $prefix;
     }
 
     /**
@@ -45,15 +54,76 @@ class GatewaySubscriber implements SubscriberInterface {
      */
     public function get_subscribed_events() {
         return [
-
+            "{$this->prefix}process_payment" => ['process_payment', 7, 2],
+            "{$this->prefix}generate_qr_code" => 'generate_qr_code',
+            "{$this->prefix}check_payment" => 'check_payment',
         ];
     }
 
-    public function process_payment() {
+    public function generate_qr_code($order_id): string {
+        $order = wc_get_order($order_id);
+        if (! $order) {
+            return '';
+        }
 
+
+
+        $data = $this->get_initialized_client()->createQRCode($order_id, $order->get_amount());
+        $order->add_meta_data('scb_transaction_data', [
+            'id' => $data['qrcodeId'],
+            'image' => $data['qrImage'],
+            'datetime' => now(),
+        ]);
+
+        return $data['qrImage'];
     }
 
-    public function check_payment() {
+    public function process_payment(array $answer, $order_id) {
+        $result = apply_filters("{$this->prefix}check_payment", false);
+        if(! $result) {
+            throw new Exception('Payment not complete');
+        }
 
+
+
+        return $answer;
+    }
+
+    public function check_payment($order_id) {
+        $client = $this->get_initialized_client();
+
+        $order = wc_get_order($order_id);
+
+        if( ! $order ) {
+            return false;
+        }
+
+        $data = $order->get_meta_data('scb_transaction_data');
+
+        if(!$data || ! key_exists('datetime', $data)) {
+            return false;
+        }
+        try {
+            $client->checkTransactionBillPayment($order_id, $order_id, new DateTime($data['datetime']));
+            return true;
+        } catch (SCBPaymentAPIException $e) {}
+
+        if(! key_exists('id', $data)) {
+            return false;
+        }
+
+        try {
+            $client->checkTransactionBillPayment($data['id']);
+            return true;
+        } catch (SCBPaymentAPIException $e) {}
+
+        return false;
+    }
+
+    public function get_initialized_client(): Client {
+        if(! $this->client->is_initialized()) {
+            $this->client->initialize($this->configurations);
+        }
+        return $this->client;
     }
 }

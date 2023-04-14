@@ -24,7 +24,12 @@ class Subscriber implements SubscriberInterface {
      */
     public function get_subscribed_events() {
         return [
-
+            'woocommerce_payment_gateways' => 'add_gateway_class',
         ];
+    }
+
+    public function add_gateway_class( $gateways ) {
+        $gateways[] = Gateway::class; // your class name is here
+        return $gateways;
     }
 }
