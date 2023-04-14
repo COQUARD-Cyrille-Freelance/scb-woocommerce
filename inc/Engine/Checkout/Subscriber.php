@@ -20,15 +20,22 @@ class Subscriber implements SubscriberInterface {
     protected $plugin_version;
 
     /**
+     * @var string
+     */
+    protected $prefix;
+
+    /**
      * @param string $plugin_name
      * @param string $assets_uri
      * @param string $plugin_version
+     * @param string $prefix
      */
-    public function __construct(string $plugin_name, string $assets_uri, string $plugin_version)
+    public function __construct(string $plugin_name, string $assets_uri, string $plugin_version, string $prefix)
     {
         $this->plugin_name = $plugin_name;
         $this->assets_uri = $assets_uri;
         $this->plugin_version = $plugin_version;
+        $this->prefix = $prefix;
     }
 
     /**
@@ -62,7 +69,16 @@ class Subscriber implements SubscriberInterface {
             return;
         }
 
-        wp_enqueue_script($this->plugin_name, $this->assets_uri . '/js/app.js', array('jquery'), $this->plugin_version, false);
+        wp_enqueue_script("{$this->prefix}checkout", $this->assets_uri . '/js/app.js', array('jquery'), $this->plugin_version, false);
+
+        wp_localize_script(
+            "{$this->prefix}checkout",
+            "{$this->prefix}checkout_data",
+            [
+                'nonce'      => wp_create_nonce( 'rocket-ajax' ),
+                'ajax_endpoint' => admin_url('/admin-ajax.php'),
+            ]
+        );
     }
 
     public function add_gateway_class( $gateways ) {
