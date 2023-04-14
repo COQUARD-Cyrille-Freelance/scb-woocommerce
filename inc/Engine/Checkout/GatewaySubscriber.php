@@ -1,8 +1,29 @@
 <?php
 namespace SCBWoocommerce\Engine\Checkout;
 
+use SCBWoocommerce\Dependencies\CoquardCyrilleFreelance\SCBPaymentAPI\Client;
 use SCBWoocommerce\Dependencies\LaunchpadCore\EventManagement\SubscriberInterface;
 class GatewaySubscriber implements SubscriberInterface {
+
+    /**
+     * @var Client
+     */
+    protected $client;
+
+    /**
+     * @var Configurations
+     */
+    protected $configurations;
+
+    /**
+     * @param Client $client
+     * @param Configurations $configurations
+     */
+    public function __construct(Client $client, Configurations $configurations)
+    {
+        $this->client = $client;
+        $this->configurations = $configurations;
+    }
 
     /**
      * Returns an array of events that this subscriber wants to listen to.
@@ -26,5 +47,13 @@ class GatewaySubscriber implements SubscriberInterface {
         return [
 
         ];
+    }
+
+    public function process_payment() {
+
+    }
+
+    public function check_payment() {
+
     }
 }
