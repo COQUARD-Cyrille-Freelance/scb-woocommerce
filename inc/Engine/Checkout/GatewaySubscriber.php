@@ -72,14 +72,14 @@ class GatewaySubscriber implements SubscriberInterface {
         $order->add_meta_data('scb_transaction_data', [
             'id' => $data['qrcodeId'],
             'image' => $data['qrImage'],
-            'datetime' => now(),
+            'datetime' => time(),
         ]);
 
         return $data['qrImage'];
     }
 
     public function process_payment(array $answer, $order_id) {
-        $result = apply_filters("{$this->prefix}check_payment", false);
+        $result = apply_filters("{$this->prefix}check_payment", $order_id);
         if(! $result) {
             throw new Exception('Payment not complete');
         }

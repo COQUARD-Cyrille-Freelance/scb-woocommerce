@@ -5,6 +5,33 @@ use SCBWoocommerce\Dependencies\LaunchpadCore\EventManagement\SubscriberInterfac
 class Subscriber implements SubscriberInterface {
 
     /**
+     * @var string
+     */
+    protected $plugin_name;
+
+    /**
+     * @var string
+     */
+    protected $assets_uri;
+
+    /**
+     * @var string
+     */
+    protected $plugin_version;
+
+    /**
+     * @param string $plugin_name
+     * @param string $assets_uri
+     * @param string $plugin_version
+     */
+    public function __construct(string $plugin_name, string $assets_uri, string $plugin_version)
+    {
+        $this->plugin_name = $plugin_name;
+        $this->assets_uri = $assets_uri;
+        $this->plugin_version = $plugin_version;
+    }
+
+    /**
      * Returns an array of events that this subscriber wants to listen to.
      *
      * The array key is the event name. The value can be:
@@ -24,8 +51,18 @@ class Subscriber implements SubscriberInterface {
      */
     public function get_subscribed_events() {
         return [
+            'admin_init' => 'enqueue_scripts',
             'woocommerce_payment_gateways' => 'add_gateway_class',
         ];
+    }
+
+    public function enqueue_scripts()
+    {
+        if(! is_checkout()) {
+            return;
+        }
+
+        wp_enqueue_script($this->plugin_name, $this->assets_uri . '/js/app.js', array('jquery'), $this->plugin_version, false);
     }
 
     public function add_gateway_class( $gateways ) {
