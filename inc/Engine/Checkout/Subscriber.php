@@ -1,8 +1,11 @@
 <?php
 namespace SCBWoocommerce\Engine\Checkout;
-use SCBWoocommerce\Dependencies\LaunchpadCore\EventManagement\SubscriberInterface;
 
-class Subscriber implements SubscriberInterface {
+use SCBWoocommerce\Dependencies\LaunchpadCore\EventManagement\SubscriberInterface;
+use WC_Order;
+
+class Subscriber implements SubscriberInterface
+{
 
     /**
      * @var string
@@ -63,18 +66,20 @@ class Subscriber implements SubscriberInterface {
      *
      * @return array
      */
-    public function get_subscribed_events() {
+    public function get_subscribed_events()
+    {
         return [
             'wp_enqueue_scripts' => 'enqueue_scripts',
             'woocommerce_payment_gateways' => 'add_gateway_class',
             "wp_ajax_{$this->prefix}check_payment" => 'ajax_check_payment_status',
+            "wp_ajax_{$this->prefix}get_qr_code" => 'ajax_get_qr_code',
             "woocommerce_thankyou" => 'register_template',
         ];
     }
 
     public function enqueue_scripts()
     {
-        if(! is_order_received_page()) {
+        if (! is_order_received_page()) {
             return;
         }
 
@@ -84,40 +89,55 @@ class Subscriber implements SubscriberInterface {
             "{$this->prefix}checkout",
             "{$this->prefix}checkout_data",
             [
-                'nonce'      => wp_create_nonce( "{$this->prefix}checkout" ),
+                'nonce'      => wp_create_nonce("{$this->prefix}checkout"),
                 'ajax_endpoint' => admin_url('/admin-ajax.php'),
             ]
         );
     }
 
-    public function add_gateway_class( $gateways ) {
+    public function add_gateway_class($gateways)
+    {
         $gateways[] = Gateway::class; // your class name is here
         return $gateways;
     }
 
-    public function ajax_check_payment_status() {
-        check_ajax_referer( "{$this->prefix}checkout" );
+    public function ajax_check_payment_status()
+    {
+        check_ajax_referer("{$this->prefix}checkout");
         $order_key = WC()->session->get('order_key');
-        if(! $order_key) {
+        if (! $order_key) {
             wp_send_json([
-                'succeed' => false
+                'success' => false,
             ]);
             wp_die();
         }
-        $order = wc_get_order_id_by_order_key($order_key);
 
-        if(! $order) {
+        $order_id = wc_get_order_id_by_order_key($order_key);
+
+        if (! $order_id) {
             wp_send_json([
-                'succeed' => false
+                'success' => false,
+            ]);
+            wp_die();
+        }
+
+        /**
+         * @var WC_Order $order
+         */
+        $order = wc_get_order($order_id);
+
+        if (! $order) {
+            wp_send_json([
+                'success' => false,
             ]);
             wp_die();
         }
 
         $payment_done = apply_filters("{$this->prefix}check_payment", $order->get_id());
 
-        if(! $payment_done) {
+        if (! $payment_done) {
             wp_send_json([
-                'succeed' => false
+                'success' => false,
             ]);
             wp_die();
         }
@@ -125,13 +145,63 @@ class Subscriber implements SubscriberInterface {
         $order->payment_complete();
 
         wp_send_json([
-            'succeed' => true
+            'success' => true,
+            'message' => __('Your payment was successful', 'scbwoocommerce')
         ]);
 
         wp_die();
     }
 
-    public function register_template() {
+    public function ajax_get_qr_code()
+    {
+        check_ajax_referer("{$this->prefix}checkout");
+        $order_key = WC()->session->get('order_key');
+
+        if (! $order_key) {
+            wp_send_json([
+                'success' => false,
+            ]);
+            wp_die();
+        }
+
+        $order_id = wc_get_order_id_by_order_key($order_key);
+
+        if (! $order_id) {
+            wp_send_json([
+                'success' => false,
+            ]);
+            wp_die();
+        }
+
+        /**
+         * @var WC_Order $order
+         */
+        $order = wc_get_order($order_id);
+
+        if (! $order) {
+            wp_send_json([
+                'success' => false,
+            ]);
+            wp_die();
+        }
+
+        $data = $order->get_meta('scb_transaction_data');
+        if (key_exists('image', $data)) {
+            wp_send_json([
+                'success' => true,
+                'image' => $data[ 'image' ]
+            ]);
+            wp_die();
+        }
+
+        wp_send_json([
+            'success' => false,
+        ]);
+        wp_die();
+    }
+
+    public function register_template()
+    {
         require_once $this->template_path . '/thank-you.php';
     }
 }

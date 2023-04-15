@@ -6,6 +6,8 @@ use Exception;
 use SCBWoocommerce\Dependencies\CoquardCyrilleFreelance\SCBPaymentAPI\Client;
 use SCBWoocommerce\Dependencies\CoquardCyrilleFreelance\SCBPaymentAPI\Exceptions\SCBPaymentAPIException;
 use SCBWoocommerce\Dependencies\LaunchpadCore\EventManagement\SubscriberInterface;
+use WP_Rocket\Dependencies\Database\Queries\Date;
+
 class GatewaySubscriber implements SubscriberInterface {
 
     /**
@@ -88,6 +90,8 @@ class GatewaySubscriber implements SubscriberInterface {
             'datetime' => time(),
         ]);
 
+        $order->save();
+
         return $data['qrImage'];
     }
 
@@ -128,7 +132,9 @@ class GatewaySubscriber implements SubscriberInterface {
         }
         try {
             $transaction = $this->transform_id($order->get_order_key());
-            $client->checkTransactionBillPayment($transaction, $transaction, new DateTime($data['datetime']));
+            $datetime = new DateTime();
+            $datetime = $datetime->setTimestamp($data['datetime']);
+            $client->checkTransactionBillPayment($transaction, $transaction, $datetime);
             return true;
         } catch (SCBPaymentAPIException $e) {}
 
