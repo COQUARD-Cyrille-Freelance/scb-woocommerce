@@ -11,9 +11,9 @@
   },
   "devDependencies": {
     "-": "0.0.1",
-    "@roots/bud": "^6.11.0",
-    "@roots/bud-babel": "^6.11.0",
-    "@roots/bud-react": "^6.11.0",
+    "@roots/bud": "^6.12.0",
+    "@roots/bud-babel": "^6.12.0",
+    "@roots/bud-react": "^6.12.0",
     "@roots/browserslist-config": "latest"
   },
   "dependencies": {

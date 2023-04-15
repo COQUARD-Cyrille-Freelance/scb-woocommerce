@@ -57,6 +57,7 @@ class GatewaySubscriber implements SubscriberInterface {
             "{$this->prefix}process_payment" => ['process_payment', 7, 2],
             "{$this->prefix}generate_qr_code" => 'generate_qr_code',
             "{$this->prefix}check_payment" => 'check_payment',
+            "{$this->prefix}init_client" => 'get_initialized_client'
         ];
     }
 
@@ -79,12 +80,14 @@ class GatewaySubscriber implements SubscriberInterface {
     }
 
     public function process_payment(array $answer, $order_id) {
-        $result = apply_filters("{$this->prefix}check_payment", $order_id);
-        if(! $result) {
+
+        $order = wc_get_order($order_id);
+
+        if(! $order) {
             throw new Exception('Payment not complete');
         }
 
-
+        WC()->session->set('order_key', $order->get_order_key());
 
         return $answer;
     }

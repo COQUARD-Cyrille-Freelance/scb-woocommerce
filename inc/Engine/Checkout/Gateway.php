@@ -1,22 +1,11 @@
 <?php
-
 namespace SCBWoocommerce\Engine\Checkout;
+
 use Exception;
-use SCBWoocommerce\Dependencies\CoquardCyrilleFreelance\SCBPaymentAPI\Client;
 use WC_Payment_Gateway;
 class Gateway extends WC_Payment_Gateway
 {
-    /**
-     * @var Client
-     */
-    protected $client;
-
-    /**
-     * @var Configurations
-     */
-    protected $configurations;
-
-    public function __constructor() {
+    public function __construct() {
         $this->id = 'scb';
         $this->icon = '';
         $this->has_fields = false;
@@ -52,7 +41,7 @@ class Gateway extends WC_Payment_Gateway
             'title' => array(
                 'title'       => __( 'Title', 'scbwoocommerce' ),
                 'type'        => 'text',
-                'description' => __( 'Titre du paiement que le client voit', 'scbwoocommerce' ),
+                'description' => __( 'Title the client see', 'scbwoocommerce' ),
                 'default'     => __( 'Pay with SCB', 'scbwoocommerce' ),
                 'desc_tip'    => true,
             ),
@@ -60,8 +49,8 @@ class Gateway extends WC_Payment_Gateway
             'description' => array(
                 'title'       => __( 'Description', 'scbwoocommerce' ),
                 'type'        => 'textarea',
-                'description' => __( 'Description du paiement que le client voit', 'scbwoocommerce' ),
-                'default'     => __( 'Vous allez être redirigé vers la page de paiement de SCB', 'scbwoocommerce' ),
+                'description' => __( 'Description the client see', 'scbwoocommerce' ),
+                'default'     => __( 'Scan the QR Code to pay with SCB Payment', 'scbwoocommerce' ),
                 'desc_tip'    => true,
             ),
             'is_sandbox' => array(
@@ -102,16 +91,26 @@ class Gateway extends WC_Payment_Gateway
 
     public function is_available()
     {
+        $cached = wp_cache_get('scb_woocommerce_is_available');
+
+        if($cached !== false) {
+            return $cached;
+        }
+
         $is_available = parent::is_available();
         if( ! $is_available) {
+            wp_cache_set('scb_woocommerce_is_available', (int) $is_available);
             return $is_available;
         }
 
         try {
             do_action('scb_woocommerce_init_client');
         } catch (Exception $exception) {
+            wp_cache_set('scb_woocommerce_is_available', 0);
             return false;
         }
+
+        wp_cache_set('scb_woocommerce_is_available', 1);
         return true;
     }
 
