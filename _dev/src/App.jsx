@@ -24,46 +24,53 @@ const checkStatus = (response) => {
     throw error;
 }
 
-function App({id = 0, ...props}) {
-    const [state, setState] = useState({
-        error: false,
-        loading: false,
-    });
-
-
-    const fetchAPI = () => {
-        fetch(scb_woocommerce_checkout_data.ajax_endpoint, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Cache-Control': 'no-cache',
-                Accept: 'application/json',
-            },
-            method: 'POST',
-            body: new URLSearchParams({
-                action: 'scb_woocommerce_check_payment',
-                _wpnonce: scb_woocommerce_checkout_data.nonce
-            })
+const fetchAPI = (action, success = (result) => result) => {
+    fetch(scb_woocommerce_checkout_data.ajax_endpoint, {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Cache-Control': 'no-cache',
+            Accept: 'application/json',
+        },
+        method: 'POST',
+        body: new URLSearchParams({
+            action,
+            _wpnonce: scb_woocommerce_checkout_data.nonce
         })
-            .then(checkStatus)
-            .then(parseJSON)
-            .then(result => {
-            if(result.status === "success") {
-                const { data } = result;
-               /* if(data.success)
-                    window.location = `/module/scbpayment/confirm?orderId=${id}`;*/
-            }
-        });
-    };
+    })
+        .then(checkStatus)
+        .then(parseJSON)
+        .then(success);
+};
+
+function App(props) {
+    const [loading, setLoading] = useState(true);
+    const [succeed, setSucceed] = useState(false);
+    const [message, setMessage] = useState('');
+    const [qrCode, setQrCode] = useState('');
+
 
     useEffect(() => {
-        const interval = setInterval(() => fetchAPI(), 15000);
+        fetchAPI('scb_woocommerce_get_qr_code', result => {
+            if(result.success) {
+                setQrCode(result.image);
+                setLoading(false);
+            }
+        })
+        const interval = setInterval(() => fetchAPI('scb_woocommerce_check_payment', result => {
+            if(result.success) {
+                setSucceed(true);
+                setMessage(result.message)
+            }
+        }), 15000);
         return () => {
                 clearInterval(interval);
         };
     }, );
 
     return <div>
-        <img src={`data:image/png;base64,${''}`}/>
+        {loading && <p>The QR code is loading</p>}
+        {! loading && <img src={`data:image/png;base64,${qrCode}`}/>}
+        {succeed && <p>{message}</p>}
     </div>;
 }
 
