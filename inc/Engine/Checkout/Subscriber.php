@@ -97,9 +97,38 @@ class Subscriber implements SubscriberInterface {
 
     public function ajax_check_payment_status() {
         check_ajax_referer( "{$this->prefix}checkout" );
-        var_dump(WC()->session->get('order_key'));
-        //wc_get_order_id_by_order_key(WC()->session->)
+        $order_key = WC()->session->get('order_key');
+        if(! $order_key) {
+            wp_send_json([
+                'succeed' => false
+            ]);
+            wp_die();
+        }
+        $order = wc_get_order_id_by_order_key($order_key);
 
+        if(! $order) {
+            wp_send_json([
+                'succeed' => false
+            ]);
+            wp_die();
+        }
+
+        $payment_done = apply_filters("{$this->prefix}check_payment", $order->get_id());
+
+        if(! $payment_done) {
+            wp_send_json([
+                'succeed' => false
+            ]);
+            wp_die();
+        }
+
+        $order->payment_complete();
+
+        wp_send_json([
+            'succeed' => true
+        ]);
+
+        wp_die();
     }
 
     public function register_template() {

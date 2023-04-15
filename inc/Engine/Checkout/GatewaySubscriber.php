@@ -24,13 +24,19 @@ class GatewaySubscriber implements SubscriberInterface {
     protected $prefix;
 
     /**
+     * @var Gateway
+     */
+    protected $gateway;
+
+    /**
      * @param Client $client
      * @param Configurations $configurations
      */
-    public function __construct(Client $client, Configurations $configurations, string $prefix)
+    public function __construct(Client $client, Configurations $configurations, Gateway $gateway, string $prefix)
     {
         $this->client = $client;
         $this->configurations = $configurations;
+        $this->gateway = $gateway;
         $this->prefix = $prefix;
     }
 
@@ -62,14 +68,20 @@ class GatewaySubscriber implements SubscriberInterface {
     }
 
     public function generate_qr_code($order_id): string {
+        /**
+         * @var \WC_Order $order
+         */
         $order = wc_get_order($order_id);
         if (! $order) {
             return '';
         }
 
+        $amount = number_format($order->get_total(),2, '.', '');
 
+        $transaction = $this->transform_id($order->get_order_key());
 
-        $data = $this->get_initialized_client()->createQRCode($order_id, $order->get_amount());
+        $data = $this->get_initialized_client()->createQRCode($transaction, $amount);
+
         $order->add_meta_data('scb_transaction_data', [
             'id' => $data['qrcodeId'],
             'image' => $data['qrImage'],
@@ -87,7 +99,15 @@ class GatewaySubscriber implements SubscriberInterface {
             throw new Exception('Payment not complete');
         }
 
+        do_action("{$this->prefix}generate_qr_code", $order_id);
+
+        wc_reduce_stock_levels($order->get_id());
+
+        WC()->cart->empty_cart();
+
         WC()->session->set('order_key', $order->get_order_key());
+
+        $answer['redirect'] = $this->gateway->get_return_url( $order );
 
         return $answer;
     }
@@ -101,13 +121,14 @@ class GatewaySubscriber implements SubscriberInterface {
             return false;
         }
 
-        $data = $order->get_meta_data('scb_transaction_data');
+        $data = $order->get_meta('scb_transaction_data');
 
         if(!$data || ! key_exists('datetime', $data)) {
             return false;
         }
         try {
-            $client->checkTransactionBillPayment($order_id, $order_id, new DateTime($data['datetime']));
+            $transaction = $this->transform_id($order->get_order_key());
+            $client->checkTransactionBillPayment($transaction, $transaction, new DateTime($data['datetime']));
             return true;
         } catch (SCBPaymentAPIException $e) {}
 
@@ -116,7 +137,7 @@ class GatewaySubscriber implements SubscriberInterface {
         }
 
         try {
-            $client->checkTransactionBillPayment($data['id']);
+            $client->checkTransactionCreditCardPayment($data['id']);
             return true;
         } catch (SCBPaymentAPIException $e) {}
 
@@ -128,5 +149,9 @@ class GatewaySubscriber implements SubscriberInterface {
             $this->client->initialize($this->configurations);
         }
         return $this->client;
+    }
+
+    protected function transform_id(string $id): string {
+        return strtoupper(str_replace('_', '', $id));
     }
 }
